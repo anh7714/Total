@@ -284,51 +284,35 @@ const ResultsManagement = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  순위
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  이름
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  부서
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  직급
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  평균점수
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  백분율
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  평가위원
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상세보기
-                </th>
+                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">순위</th>
+                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">이름</th>
+                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">부서</th>
+                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">직급</th>
+                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">평균점수</th>
+                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">백분율</th>
+                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">평가위원</th>
+                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">상세보기</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {results.map((result, index) => (
                 <tr key={result.candidate.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm font-medium text-gray-900">
                     {index + 1}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm font-medium text-gray-900">
                     {result.candidate.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
                     {result.candidate.department}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
                     {result.candidate.position}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
                     {result.averageScore.toFixed(2)} / {result.maxPossibleScore}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         result.percentage >= 90
@@ -343,10 +327,10 @@ const ResultsManagement = () => {
                       {result.percentage.toFixed(1)}%
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
                     {result.evaluatorCount}명
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4 text-center align-middle flex justify-center items-center text-sm font-medium">
                     <button
                       onClick={() => setSelectedCandidate(selectedCandidate === result.candidate.id ? null : result.candidate.id)}
                       className="text-blue-600 hover:text-blue-900"

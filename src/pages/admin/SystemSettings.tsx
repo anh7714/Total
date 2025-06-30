@@ -2,10 +2,9 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSystemName } from "../../contexts/SystemNameContext";
-import { Link } from "react-router-dom";
 
 const SystemSettings = () => {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { refresh: refreshSystemName } = useSystemName();
   const [systemName, setSystemName] = useState("");
   const [systemNameSaved, setSystemNameSaved] = useState(false);
@@ -68,6 +67,30 @@ const SystemSettings = () => {
     }
   };
 
+  // 비밀번호 초기화 핸들러
+  const handlePasswordReset = async () => {
+    setPasswordError("");
+    setPasswordChanged(false);
+    const defaultPassword = "admin123";
+    if (newPassword === defaultPassword || newPasswordConfirm === defaultPassword) {
+      setPasswordError("이미 기본 비밀번호(admin123)입니다.");
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: defaultPassword });
+    if (error) {
+      if (error.message.includes("New password should be different")) {
+        setPasswordError("이미 기본 비밀번호(admin123)입니다.");
+      } else {
+        setPasswordError("비밀번호 초기화 실패: " + error.message);
+      }
+    } else {
+      setPasswordChanged(true);
+      setNewPassword("");
+      setNewPasswordConfirm("");
+      setTimeout(() => setPasswordChanged(false), 2000);
+    }
+  };
+
   const handleSystemReset = async () => {
     if (
       !window.confirm(
@@ -91,7 +114,7 @@ const SystemSettings = () => {
         await supabase.from(table).delete().neq("id", 0);
       }
       setTimeout(() => window.location.reload(), 1500);
-    } catch (e) {
+    } catch (e: any) {
       alert("초기화 실패: " + e.message);
     }
     setResetting(false);
@@ -111,7 +134,7 @@ const SystemSettings = () => {
             type="text"
             value={systemName}
             onChange={e => setSystemName(e.target.value)}
-            className="w-full border rounded px-3 py-2 mb-4"
+            className="w-full border rounded px-3 py-2 mb-4 bg-gray-100 focus:bg-white"
             disabled={loading}
           />
           <button
@@ -142,21 +165,30 @@ const SystemSettings = () => {
             placeholder="새 비밀번호 입력"
             value={newPassword}
             onChange={e => setNewPassword(e.target.value)}
-            className="w-full border rounded px-3 py-2 mb-2"
+            className="w-full border rounded px-3 py-2 mb-2 bg-gray-100 focus:bg-white"
           />
           <input
             type="password"
             placeholder="새 비밀번호 다시 입력"
             value={newPasswordConfirm}
             onChange={e => setNewPasswordConfirm(e.target.value)}
-            className="w-full border rounded px-3 py-2 mb-4"
+            className="w-full border rounded px-3 py-2 mb-4 bg-gray-100 focus:bg-white"
           />
-          <button
-            onClick={handlePasswordChange}
-            className="bg-blue-700 text-white px-6 py-2 rounded"
-          >
-            비밀번호 변경
-          </button>
+          <div className="flex items-center w-full">
+            <button
+              onClick={handlePasswordChange}
+              className="bg-blue-700 text-white px-6 py-2 rounded"
+            >
+              비밀번호 변경
+            </button>
+            <button
+              onClick={handlePasswordReset}
+              className="bg-gray-200 text-gray-700 px-4 py-2 rounded border border-gray-300 hover:bg-gray-300 transition ml-auto"
+              type="button"
+            >
+              초기화
+            </button>
+          </div>
           {passwordError && (
             <div className="mt-2 text-red-600 font-semibold">{passwordError}</div>
           )}

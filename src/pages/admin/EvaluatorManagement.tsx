@@ -181,26 +181,41 @@ const EvaluatorManagement = () => {
 
   return (
     <div className="bg-white rounded-xl shadow p-6 w-full">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-gray-600 text-sm">엑셀로 평가위원을 일괄 등록/수정할 수 있습니다.</div>
+        <div className="flex gap-2 flex-nowrap min-w-0">
+          <ExcelUpload onUpload={handleExcelUpload}>
+            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 h-10 rounded shadow transition">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              엑셀 업로드
+            </button>
+          </ExcelUpload>
+          <a href="/sample/evaluators.xlsx" download className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 h-10 rounded border border-gray-300 transition">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            예시파일
+          </a>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
                 이름
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
                 이메일
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
                 부서
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
                 상태
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
                 등록일
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
                 관리
               </th>
             </tr>
@@ -208,16 +223,16 @@ const EvaluatorManagement = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {evaluators.map((evaluator) => (
               <tr key={evaluator.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm font-medium text-gray-900">
                   {evaluator.name}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
                   {evaluator.email}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
                   {evaluator.department}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       evaluator.is_active
@@ -228,10 +243,10 @@ const EvaluatorManagement = () => {
                     {evaluator.is_active ? "활성" : "비활성"}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
                   {new Date(evaluator.created_at).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                <td className="px-6 py-4 text-center align-middle flex justify-center items-center text-sm font-medium space-x-2">
                   <button
                     onClick={() => handleEdit(evaluator)}
                     className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 h-10 w-10 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"

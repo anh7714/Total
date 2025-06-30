@@ -60,7 +60,7 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
   };
 
   return (
-    <div className="inline-block">
+    <>
       <input
         type="file"
         accept={accept}
@@ -68,20 +68,26 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
         onChange={handleFileChange}
         className="hidden"
       />
-      <button
-        type="button"
-        disabled={loading}
-        className={`px-4 py-2 rounded transition ${className} ${
-          loading ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {loading ? "처리 중..." : children}
-      </button>
+      {React.isValidElement(children) ? (
+        React.cloneElement(children as React.ReactElement<any>, {
+          onClick: () => fileInputRef.current?.click(),
+          disabled: loading,
+          className: `${(children as any).props.className || ''} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`.trim(),
+        })
+      ) : (
+        <button
+          type="button"
+          disabled={loading}
+          className={`px-4 h-10 rounded transition ${className} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {loading ? '처리 중...' : children}
+        </button>
+      )}
       {fileName && !loading && (
         <div className="text-xs text-gray-600 mt-1">선택된 파일: {fileName}</div>
       )}
-    </div>
+    </>
   );
 };
 
