@@ -84,9 +84,6 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({
           {loading ? '처리 중...' : children}
         </button>
       )}
-      {fileName && !loading && (
-        <div className="text-xs text-gray-600 mt-1">선택된 파일: {fileName}</div>
-      )}
     </>
   );
 };

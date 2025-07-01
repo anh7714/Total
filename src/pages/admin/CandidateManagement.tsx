@@ -30,6 +30,11 @@ const CandidateManagement = () => {
     description: "",
     sort_order: 0,
   });
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [pendingExcelData, setPendingExcelData] = useState<any[] | null>(null);
+  const [uploadMode, setUploadMode] = useState<null | 'overwrite' | 'append'>(null);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultModalMsg, setResultModalMsg] = useState("");
 
   useEffect(() => {
     fetchCandidates();
@@ -145,27 +150,48 @@ const CandidateManagement = () => {
   };
 
   const handleExcelUpload = async (data: any[]) => {
+    if (candidates.length > 0) {
+      setPendingExcelData(data);
+      setShowUploadModal(true);
+    } else {
+      await doExcelUpload(data, 'overwrite');
+    }
+  };
+
+  const doExcelUpload = async (data: any[], mode: 'overwrite' | 'append') => {
     try {
+      if (mode === 'overwrite') {
+        // 전체 삭제 후 업로드
+        const { error: deleteError } = await supabase.from("candidates").delete().neq("id", 0);
+        if (deleteError) throw deleteError;
+      }
+      let startOrder = 1;
+      if (mode === 'append') {
+        startOrder = candidates.length + 1;
+      }
       const candidatesData = data.map((row, index) => ({
         name: row.name || row.이름 || row.성명 || "",
         department: row.department || row.부서 || row.소속 || "",
         position: row.position || row.직급 || row.직책 || "",
         category: row.category || row.분류 || row.카테고리 || "",
         description: row.description || row.설명 || row.비고 || "",
-        sort_order: row.sort_order || row.순서 || index + 1,
+        sort_order: startOrder + index,
       }));
-
       const { error } = await supabase
         .from("candidates")
         .insert(candidatesData);
-
       if (error) throw error;
-      
-      alert("엑셀 데이터가 성공적으로 업로드되었습니다.");
+      setResultModalMsg("엑셀 데이터가 성공적으로 업로드되었습니다.");
+      setShowResultModal(true);
       fetchCandidates();
     } catch (error) {
       console.error("엑셀 업로드 실패:", error);
-      alert("엑셀 업로드에 실패했습니다.");
+      setResultModalMsg("엑셀 업로드에 실패했습니다.");
+      setShowResultModal(true);
+    } finally {
+      setShowUploadModal(false);
+      setPendingExcelData(null);
+      setUploadMode(null);
     }
   };
 
@@ -393,6 +419,33 @@ const CandidateManagement = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 업로드 모달 */}
+      {showUploadModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white rounded-xl shadow-xl p-8 max-w-xl w-full">
+            <h2 className="text-lg font-bold mb-2">엑셀 업로드 방식 선택</h2>
+            <p className="text-sm text-gray-600 mb-6 whitespace-pre-line" dangerouslySetInnerHTML={{__html: `기존 평가대상자가 이미 존재합니다.<br/><br/>'전체 덮어쓰기'를 선택하면 기존 데이터가 모두 삭제되고 새로 업로드됩니다.<br/>'기존 아래 추가'를 선택하면 기존 대상자 아래에 순서대로 추가됩니다.`}} />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => { setShowUploadModal(false); setPendingExcelData(null); }} className="px-4 py-2 rounded border">취소</button>
+              <button onClick={async () => { setUploadMode('overwrite'); await doExcelUpload(pendingExcelData!, 'overwrite'); }} className="px-4 py-2 rounded bg-red-600 text-white">전체 덮어쓰기</button>
+              <button onClick={async () => { setUploadMode('append'); await doExcelUpload(pendingExcelData!, 'append'); }} className="px-4 py-2 rounded bg-blue-600 text-white">기존 아래 추가</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 업로드 결과 모달 */}
+      {showResultModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white rounded-xl shadow-xl p-8 max-w-xl w-full">
+            <h2 className="text-lg font-bold mb-2">알림</h2>
+            <p className="text-sm text-gray-600 mb-6" dangerouslySetInnerHTML={{__html: resultModalMsg}} />
+            <div className="flex justify-end mt-6">
+              <button onClick={() => setShowResultModal(false)} className="px-4 py-2 rounded bg-blue-600 text-white">확인</button>
             </div>
           </div>
         </div>

@@ -53,42 +53,42 @@ const AdminLogin = () => {
               </div>
               <h2 className="text-2xl font-extrabold text-gray-900 mb-1">관리자 로그인</h2>
               <p className="text-gray-500 text-xs font-normal">관리자 비밀번호를 입력하여 접속하세요.</p>
-            </div>
+          </div>
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm text-center">
                 {error}
-              </div>
+        </div>
             )}
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium leading-none text-gray-900">이메일</label>
-              <input
+            <input
                 type="email"
                 placeholder="이메일을 입력하세요"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="border rounded px-3 py-2 text-sm text-gray-900 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-400"
-                required
-              />
-            </div>
+              required
+            />
+          </div>
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium leading-none text-gray-900">비밀번호</label>
-              <input
-                type="password"
+            <input
+              type="password"
                 placeholder="비밀번호"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
                 className="border rounded px-3 py-2 text-sm text-gray-900 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-400"
-                required
-              />
-            </div>
-            <button
-              type="submit"
+              required
+            />
+          </div>
+          <button
+            type="submit"
               disabled={loading}
               className="w-full inline-flex items-center justify-center rounded-md py-2 bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium font-sans focus:outline-none focus:ring-2 focus:ring-primary transition disabled:opacity-50"
-            >
+          >
               {loading ? "로그인 중..." : (isSignUp ? "회원가입" : "로그인")}
-            </button>
-            
+          </button>
+
             <div className="text-center">
               <button
                 type="button"
@@ -118,4 +118,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin; 
+export default AdminLogin;
