@@ -58,7 +58,6 @@ const CandidateManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       if (editingCandidate) {
         // 수정
@@ -69,17 +68,20 @@ const CandidateManagement = () => {
             updated_at: new Date().toISOString(),
           })
           .eq("id", editingCandidate.id);
-
         if (error) throw error;
       } else {
         // 추가
+        let sortOrder = formData.sort_order;
+        if (!sortOrder || sortOrder === 0) {
+          // 목록에서 최대값+1
+          const maxOrder = candidates.length > 0 ? Math.max(...candidates.map(c => c.sort_order || 0)) : 0;
+          sortOrder = maxOrder + 1;
+        }
         const { error } = await supabase
           .from("candidates")
-          .insert([formData]);
-
+          .insert([{ ...formData, sort_order: sortOrder }]);
         if (error) throw error;
       }
-
       setShowModal(false);
       setEditingCandidate(null);
       resetForm();
@@ -207,7 +209,7 @@ const CandidateManagement = () => {
     <div className="bg-white rounded-xl shadow p-6 w-full">
       <div className="flex items-center justify-between mb-4">
         <div className="text-gray-600 text-sm">엑셀로 평가대상자를 일괄 등록/수정할 수 있습니다.</div>
-        <div className="flex gap-2 flex-nowrap min-w-0">
+        <div className="flex gap-2 flex-nowrap min-w-0 items-center">
           <ExcelUpload onUpload={handleExcelUpload}>
             <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 h-10 rounded shadow transition">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -218,33 +220,26 @@ const CandidateManagement = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
             예시파일
           </a>
+          <button
+            className="ml-2 w-10 h-10 flex items-center justify-center rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 text-2xl shadow transition"
+            title="평가대상자 추가"
+            onClick={() => { setEditingCandidate(null); setShowModal(true); }}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+          </button>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
-              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
-                순서
-              </th>
-              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
-                이름
-              </th>
-              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
-                부서
-              </th>
-              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
-                직급
-              </th>
-              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
-                분류
-              </th>
-              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
-                상태
-              </th>
-              <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
-                관리
-              </th>
+              <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">순서</th>
+              <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">이름</th>
+              <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">부서</th>
+              <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">직급</th>
+              <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">분류</th>
+              <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">상태</th>
+              <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">관리</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">

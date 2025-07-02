@@ -61,6 +61,7 @@ const ResultsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCandidate, setSelectedCandidate] = useState<number | null>(null);
   const [results, setResults] = useState<CandidateResult[]>([]);
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -203,6 +204,22 @@ const ResultsManagement = () => {
     document.body.removeChild(link);
   };
 
+  // 미완료 평가 대상자와 미평가 평가위원 계산
+  const incompleteList = candidates
+    .map(candidate => {
+      // 이 후보에 대해 평가한 evaluator id 집합
+      const completedEvaluatorIds = new Set(
+        scores.filter(s => s.candidate_id === candidate.id && s.is_final).map(s => s.evaluator_id)
+      );
+      // 미평가 evaluator 목록
+      const notEvaluated = evaluators.filter(ev => !completedEvaluatorIds.has(ev.id));
+      return notEvaluated.length > 0
+        ? { candidate, notEvaluated }
+        : null;
+    })
+    .filter(Boolean);
+  const incompleteCount = incompleteList.length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -223,7 +240,7 @@ const ResultsManagement = () => {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">총 평가 대상자</p>
+              <p className="text-sm font-medium text-gray-600">총 평가대상</p>
               <p className="text-2xl font-semibold text-gray-900">{candidates.length}</p>
             </div>
           </div>
@@ -248,27 +265,24 @@ const ResultsManagement = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              {/* ... */}
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">미완료 평가</p>
+              <button onClick={() => setShowIncompleteModal(true)} className="text-2xl font-semibold text-gray-900 focus:outline-none hover:underline">
+                {incompleteCount}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+              {/* ... */}
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">평가위원</p>
               <p className="text-2xl font-semibold text-gray-900">{evaluators.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-purple-100 text-purple-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">평가 항목</p>
-              <p className="text-2xl font-semibold text-gray-900">{items.length}</p>
             </div>
           </div>
         </div>
@@ -280,125 +294,169 @@ const ResultsManagement = () => {
           <h2 className="text-lg font-medium text-gray-900">평가 결과 순위</h2>
         </div>
         
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">순위</th>
-                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">이름</th>
-                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">부서</th>
-                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">직급</th>
-                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">평균점수</th>
-                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">백분율</th>
-                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">평가위원</th>
-                <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">상세보기</th>
+                <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">순위</th>
+                <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">이름</th>
+                <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">부서</th>
+                <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">직급</th>
+                <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">평균점수</th>
+                <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">총점</th>
+                <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">평가위원</th>
+                <th className="px-6 py-3 text-center align-middle text-base font-bold text-black uppercase tracking-wider">상세보기</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {results.map((result, index) => (
-                <tr key={result.candidate.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm font-medium text-gray-900">
-                    {index + 1}
-                  </td>
-                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm font-medium text-gray-900">
-                    {result.candidate.name}
-                  </td>
-                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
-                    {result.candidate.department}
-                  </td>
-                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
-                    {result.candidate.position}
-                  </td>
-                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
-                    {result.averageScore.toFixed(2)} / {result.maxPossibleScore}
-                  </td>
-                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        result.percentage >= 90
-                          ? "bg-green-100 text-green-800"
-                          : result.percentage >= 80
-                          ? "bg-blue-100 text-blue-800"
-                          : result.percentage >= 70
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {result.percentage.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
-                    {result.evaluatorCount}명
-                  </td>
-                  <td className="px-6 py-4 text-center align-middle flex justify-center items-center text-sm font-medium">
-                    <button
-                      onClick={() => setSelectedCandidate(selectedCandidate === result.candidate.id ? null : result.candidate.id)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      {selectedCandidate === result.candidate.id ? "접기" : "상세보기"}
-                    </button>
-                  </td>
-                </tr>
+                <React.Fragment key={result.candidate.id}>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm font-medium text-gray-900">
+                      {index + 1}
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm font-medium text-gray-900">
+                      {result.candidate.name}
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
+                      {result.candidate.department}
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
+                      {result.candidate.position}
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
+                      {result.averageScore.toFixed(2)} / {result.maxPossibleScore}
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          result.percentage >= 90
+                            ? "bg-green-100 text-green-800"
+                            : result.percentage >= 80
+                            ? "bg-blue-100 text-blue-800"
+                            : result.percentage >= 70
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {result.totalScore.toFixed(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm text-gray-500">
+                      {result.evaluatorCount}명
+                    </td>
+                    <td className="px-6 py-4 text-center align-middle flex justify-center items-center text-sm font-medium">
+                      <button
+                        onClick={() => setSelectedCandidate(selectedCandidate === result.candidate.id ? null : result.candidate.id)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        {selectedCandidate === result.candidate.id ? "접기" : "상세보기"}
+                      </button>
+                    </td>
+                  </tr>
+                  {/* 상세보기 행 - 클릭한 행 바로 아래에 표시 */}
+                  {selectedCandidate === result.candidate.id && (
+                    <tr>
+                      <td colSpan={8} className="px-0 py-0">
+                        <div className="bg-gray-50 border-t border-gray-200">
+                          <div className="px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {result.candidate.name} - 상세 평가 결과
+                            </h3>
+                          </div>
+                          
+                          <div className="p-6">
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      평가 항목
+                                    </th>
+                                    {evaluators.map(evaluator => (
+                                      <th key={evaluator.id} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {evaluator.name}
+                                      </th>
+                                    ))}
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      평균
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                  {items.map(item => {
+                                    const itemScores = getItemScores(result.candidate.id, item.id);
+                                    const evaluatorScores = evaluators.map(evaluator => {
+                                      const score = itemScores.find(s => s.evaluator_id === evaluator.id);
+                                      return score ? score.score : "-";
+                                    });
+                                    const averageScore = itemScores.length > 0 
+                                      ? itemScores.reduce((sum, score) => sum + score.score, 0) / itemScores.length 
+                                      : 0;
+
+                                    return (
+                                      <tr key={item.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                          {item.item_code}. {item.item_name}
+                                        </td>
+                                        {evaluatorScores.map((score, index) => (
+                                          <td key={index} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {score === "-" ? "-" : `${score}/${item.max_score}`}
+                                          </td>
+                                        ))}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                          {averageScore > 0 ? `${averageScore.toFixed(1)}/${item.max_score}` : "-"}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* 상세 결과 */}
-      {selectedCandidate && (
-        <div className="mt-8 bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">
-              {candidates.find(c => c.id === selectedCandidate)?.name} - 상세 평가 결과
-            </h3>
-          </div>
-          
-          <div className="p-6">
+      {/* 미완료 평가 모달 */}
+      {showIncompleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-8 relative">
+            <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl" onClick={() => setShowIncompleteModal(false)}>&times;</button>
+            <h2 className="text-xl font-bold mb-6">미완료 평가 대상 및 미평가 평가위원</h2>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 border">
+                <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      평가 항목
-                    </th>
-                    {evaluators.map(evaluator => (
-                      <th key={evaluator.id} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {evaluator.name}
-                      </th>
-                    ))}
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      평균
-                    </th>
+                    <th className="px-6 py-3 text-center text-base font-bold text-black uppercase tracking-wider border-r">미완료 평가 대상자</th>
+                    <th className="px-6 py-3 text-center text-base font-bold text-black uppercase tracking-wider">미평가 평가위원</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {items.map(item => {
-                    const itemScores = getItemScores(selectedCandidate, item.id);
-                    const evaluatorScores = evaluators.map(evaluator => {
-                      const score = itemScores.find(s => s.evaluator_id === evaluator.id);
-                      return score ? score.score : "-";
-                    });
-                    const averageScore = itemScores.length > 0 
-                      ? itemScores.reduce((sum, score) => sum + score.score, 0) / itemScores.length 
-                      : 0;
-
-                    return (
-                      <tr key={item.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {item.item_code}. {item.item_name}
-                        </td>
-                        {evaluatorScores.map((score, index) => (
-                          <td key={index} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {score === "-" ? "-" : `${score}/${item.max_score}`}
-                          </td>
-                        ))}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {averageScore > 0 ? `${averageScore.toFixed(1)}/${item.max_score}` : "-"}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {incompleteList.length === 0 && (
+                    <tr>
+                      <td colSpan={2} className="px-6 py-6 text-center text-gray-400">모든 평가가 완료되었습니다.</td>
+                    </tr>
+                  )}
+                  {incompleteList.map((item: any) => (
+                    <tr key={item.candidate.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-center font-medium text-gray-900 border-r">{item.candidate.name}</td>
+                      <td className="px-6 py-4 text-center text-gray-700">
+                        {item.notEvaluated.length === 0 ? (
+                          <span className="text-gray-400">없음</span>
+                        ) : (
+                          item.notEvaluated.map((ev: any) => ev.name).join(", ")
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

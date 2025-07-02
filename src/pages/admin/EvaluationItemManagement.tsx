@@ -60,19 +60,18 @@ const EvaluationItemManagement = () => {
       const { data: categoriesData, error: categoriesError } = await supabase
         .from("evaluation_categories")
         .select("*")
+        .order("category_code", { ascending: true })
         .order("sort_order", { ascending: true });
 
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData || []);
 
-      // 평가 항목 조회
+      // 평가 항목 조회 (카테고리 코드, 항목 코드 기준 정렬)
       const { data: itemsData, error: itemsError } = await supabase
         .from("evaluation_items")
-        .select(`
-          *,
-          category:evaluation_categories(*)
-        `)
-        .order("sort_order", { ascending: true });
+        .select(`*, category:evaluation_categories(*)`)
+        .order("item_code", { ascending: true })
+        .order("category_id", { ascending: true });
 
       if (itemsError) throw itemsError;
       setItems(itemsData || []);
@@ -86,25 +85,27 @@ const EvaluationItemManagement = () => {
   // 카테고리 관련 함수들
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
+      let formToSave = { ...categoryForm };
+      if (!formToSave.sort_order || formToSave.sort_order === 0) {
+        // 현재 카테고리 중 최대 sort_order + 1
+        const maxOrder = categories.length > 0 ? Math.max(...categories.map(c => c.sort_order)) : 0;
+        formToSave.sort_order = maxOrder + 1;
+      }
       if (editingCategory) {
         // 수정
         const { error } = await supabase
           .from("evaluation_categories")
-          .update(categoryForm)
+          .update(formToSave)
           .eq("id", editingCategory.id);
-
         if (error) throw error;
       } else {
         // 추가
         const { error } = await supabase
           .from("evaluation_categories")
-          .insert([categoryForm]);
-
+          .insert([formToSave]);
         if (error) throw error;
       }
-
       setShowCategoryModal(false);
       setEditingCategory(null);
       resetCategoryForm();
@@ -174,6 +175,9 @@ const EvaluationItemManagement = () => {
         if (error) throw error;
       }
 
+      // 카테고리별로 정렬순서 재정렬
+      await reorderItemsByCategory();
+
       setShowItemModal(false);
       setEditingItem(null);
       resetItemForm();
@@ -181,6 +185,60 @@ const EvaluationItemManagement = () => {
     } catch (error) {
       console.error("평가 항목 저장 실패:", error);
       alert("저장에 실패했습니다.");
+    }
+  };
+
+  // 카테고리별로 항목들의 정렬순서를 재정렬하는 함수
+  const reorderItemsByCategory = async () => {
+    try {
+      // 모든 항목을 카테고리별로 그룹화
+      const itemsByCategory: { [categoryId: number]: EvaluationItem[] } = {};
+      
+      items.forEach(item => {
+        if (!itemsByCategory[item.category_id]) {
+          itemsByCategory[item.category_id] = [];
+        }
+        itemsByCategory[item.category_id].push(item);
+      });
+
+      // 각 카테고리별로 정렬순서 업데이트
+      for (const [categoryId, categoryItems] of Object.entries(itemsByCategory)) {
+        // 카테고리 코드별로 정렬 (A1, A2, A3...)
+        categoryItems.sort((a, b) => {
+          const aMatch = a.item_code.match(/^(\w+)(\d+)$/);
+          const bMatch = b.item_code.match(/^(\w+)(\d+)$/);
+          
+          if (aMatch && bMatch) {
+            const aPrefix = aMatch[1];
+            const bPrefix = bMatch[1];
+            const aNumber = parseInt(aMatch[2]);
+            const bNumber = parseInt(bMatch[2]);
+            
+            // 먼저 카테고리 코드로 정렬
+            if (aPrefix !== bPrefix) {
+              return aPrefix.localeCompare(bPrefix);
+            }
+            // 같은 카테고리 내에서는 숫자로 정렬
+            return aNumber - bNumber;
+          }
+          
+          // 정규식 매치가 안 되면 기존 정렬순서 사용
+          return a.sort_order - b.sort_order;
+        });
+
+        // 정렬된 순서대로 정렬순서 업데이트
+        for (let i = 0; i < categoryItems.length; i++) {
+          const newSortOrder = i + 1;
+          if (categoryItems[i].sort_order !== newSortOrder) {
+            await supabase
+              .from("evaluation_items")
+              .update({ sort_order: newSortOrder })
+              .eq("id", categoryItems[i].id);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("정렬순서 재정렬 실패:", error);
     }
   };
 
@@ -208,6 +266,10 @@ const EvaluationItemManagement = () => {
         .eq("id", id);
 
       if (error) throw error;
+      
+      // 삭제 후 카테고리별로 정렬순서 재정렬
+      await reorderItemsByCategory();
+      
       fetchData();
     } catch (error) {
       console.error("평가 항목 삭제 실패:", error);
@@ -224,6 +286,68 @@ const EvaluationItemManagement = () => {
       max_score: 100,
       weight: 1.0,
       sort_order: 0,
+    });
+  };
+
+  // 카테고리별 다음 항목 코드 생성
+  const generateNextItemCode = (categoryId: number) => {
+    const selectedCategory = categories.find(cat => cat.id === categoryId);
+    if (!selectedCategory) return "";
+    
+    // 해당 카테고리의 기존 항목들 조회
+    const categoryItems = items.filter(item => item.category_id === categoryId);
+    
+    if (categoryItems.length === 0) {
+      // 첫 번째 항목인 경우
+      return `${selectedCategory.category_code}1`;
+    }
+    
+    // 기존 항목 코드에서 숫자 부분 추출하여 다음 번호 계산
+    const itemCodes = categoryItems.map(item => item.item_code);
+    const numbers = itemCodes
+      .map(code => {
+        const match = code.match(new RegExp(`^${selectedCategory.category_code}(\\d+)$`));
+        return match ? parseInt(match[1]) : 0;
+      })
+      .filter(num => num > 0);
+    
+    const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+    return `${selectedCategory.category_code}${nextNumber}`;
+  };
+
+  // 카테고리별 다음 정렬순서 생성
+  const generateNextSortOrder = (categoryId: number) => {
+    const categoryItems = items.filter(item => item.category_id === categoryId);
+    
+    if (categoryItems.length === 0) {
+      return 1;
+    }
+    
+    const maxSortOrder = Math.max(...categoryItems.map(item => item.sort_order));
+    return maxSortOrder + 1;
+  };
+
+  // 카테고리 선택 시 자동으로 항목 코드와 정렬순서 설정
+  const handleCategoryChange = (categoryId: number) => {
+    if (categoryId === 0) {
+      // 카테고리 선택 해제 시
+      setItemForm({
+        ...itemForm,
+        category_id: 0,
+        item_code: "",
+        sort_order: 0
+      });
+      return;
+    }
+    
+    const nextItemCode = generateNextItemCode(categoryId);
+    const nextSortOrder = generateNextSortOrder(categoryId);
+    
+    setItemForm({
+      ...itemForm,
+      category_id: categoryId,
+      item_code: nextItemCode,
+      sort_order: nextSortOrder
     });
   };
 
@@ -294,7 +418,7 @@ const EvaluationItemManagement = () => {
           </a>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 카테고리 관리 */}
           <div className="bg-white rounded-lg shadow">
@@ -315,7 +439,7 @@ const EvaluationItemManagement = () => {
             
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-6 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">
                       코드
@@ -332,7 +456,7 @@ const EvaluationItemManagement = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {categories.map((category) => (
+                  {([...categories].sort((a, b) => a.category_code.localeCompare(b.category_code))).map((category) => (
                     <tr key={category.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-center align-middle whitespace-nowrap text-sm font-medium text-gray-900">
                         {category.category_code}
@@ -385,7 +509,7 @@ const EvaluationItemManagement = () => {
             
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-4 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">코드</th>
                     <th className="px-4 py-3 text-center align-middle text-xs font-bold text-gray-500 uppercase tracking-wider">카테고리명</th>
@@ -396,7 +520,15 @@ const EvaluationItemManagement = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {items.map((item) => (
+                  {([...items].sort((a, b) => {
+                    if (a.category.category_code !== b.category.category_code) {
+                      return a.category.category_code.localeCompare(b.category.category_code);
+                    }
+                    // item_code에서 숫자 추출
+                    const aNum = parseInt(a.item_code.replace(/[^0-9]/g, "")) || 0;
+                    const bNum = parseInt(b.item_code.replace(/[^0-9]/g, "")) || 0;
+                    return aNum - bNum;
+                  })).map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 text-center align-middle text-sm font-medium text-gray-900">{item.item_code}</td>
                       <td className="px-4 py-4 text-center align-middle text-sm text-gray-500">{item.category?.category_name}</td>
@@ -536,9 +668,7 @@ const EvaluationItemManagement = () => {
                   <select
                     required
                     value={itemForm.category_id}
-                    onChange={(e) =>
-                      setItemForm({ ...itemForm, category_id: parseInt(e.target.value) })
-                    }
+                    onChange={(e) => handleCategoryChange(parseInt(e.target.value))}
                     className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value={0}>카테고리 선택</option>
@@ -561,7 +691,8 @@ const EvaluationItemManagement = () => {
                     onChange={(e) =>
                       setItemForm({ ...itemForm, item_code: e.target.value })
                     }
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    placeholder="카테고리 선택 시 자동 생성"
                   />
                 </div>
                 
@@ -635,7 +766,8 @@ const EvaluationItemManagement = () => {
                     onChange={(e) =>
                       setItemForm({ ...itemForm, sort_order: parseInt(e.target.value) || 0 })
                     }
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    placeholder="카테고리 선택 시 자동 생성"
                   />
                 </div>
                 

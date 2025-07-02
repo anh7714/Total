@@ -6,7 +6,7 @@ import EvaluatorManagement from "./EvaluatorManagement";
 import CandidateManagement from "./CandidateManagement";
 import EvaluationItemManagement from "./EvaluationItemManagement";
 import SystemSettings from "./SystemSettings";
-import { ChartBarIcon, UsersIcon, ClipboardIcon, CheckCircleIcon, CogIcon } from "@heroicons/react/24/solid";
+import { ChartBarIcon, UsersIcon, ClipboardIcon, CheckCircleIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/solid";
 
 const tabs = [
   { name: "평가 결과 관리", icon: <ChartBarIcon className="w-5 h-5" /> },
@@ -33,7 +33,16 @@ const AdminDashboard = () => {
   return (
     <div className="w-full min-h-screen bg-gray-50">
       <main className="w-full max-w-screen-2xl mx-auto px-2 md:px-4 py-8">
-        <h1 className="text-4xl font-bold text-primary mb-8 text-left">관리자 페이지</h1>
+        <div className="flex justify-between items-center pb-8 mb-8 border-b">
+          <div>
+            <h1 className="text-3xl font-bold text-primary text-left">관리자 페이지</h1>
+            <p className="text-base text-gray-500 mt-2">{user?.email ? `${user.email} 님! 환영합니다.` : '관리자님! 환영합니다.'}</p>
+          </div>
+          <button onClick={handleLogout} className="flex items-center gap-2 border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 transition">
+            <ArrowRightOnRectangleIcon className="w-5 h-5" />
+            로그아웃
+          </button>
+        </div>
         <nav className="grid grid-cols-5 gap-0 mb-8 border-b">
           {tabs.map((tab) => (
             <button
