@@ -100,8 +100,8 @@ const HomePage = () => {
                   <div className="flex items-center gap-4">
                     <TrophyIcon className="h-8 w-8 text-blue-800" strokeWidth={2} />
                     <div>
-                      <div className="tracking-tight text-2xl font-bold">채점 결과</div>
-                      <div className="text-sm text-gray-500 mt-1">종합 채점 결과를 확인합니다.</div>
+                      <div className="tracking-tight text-2xl font-bold">결과분석 및 보고서 생성</div>
+                      <div className="text-sm text-gray-500 mt-1">종합 채점 결과를 분석하고 보고서를 생성합니다.</div>
                     </div>
                   </div>
                 </div>

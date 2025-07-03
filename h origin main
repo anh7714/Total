@@ -1,0 +1,5 @@
+[33m14d8c77[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m 관리자/평가위원 테이블 헤더 폰트 및 스타일 일괄 적용, UI/UX 통일 최종 반영
+[33me49489f[m[33m ([m[1;31morigin/main[m[33m)[m Feat: 엑셀 업로드 안내 및 결과 팝업 일관화, sort_order 버그 수정 등 UI/UX 개선
+[33ma71c207[m Chore: 전체 파일 수정사항 반영
+[33m8f0529e[m Add: 예시 엑셀파일 및 public 폴더 git에 포함
+[33m9a45e84[m Initial commit: Comprehensive Evaluation System with React, TypeScript, and Supabase
